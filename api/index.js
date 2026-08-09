@@ -13,7 +13,12 @@ app.use(express.urlencoded({ extended: true }));
 // Melayani file statis dari root direktori
 app.use(express.static(path.join(__dirname, '../')));
 
-// Import Routes (Naik satu tingkat dari folder 'api' ke root, lalu ke folder 'routes')
+// Tambahkan rute eksplisit untuk halaman utama
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
+});
+
+// Import Routes
 const authRoutes = require('../routes/auth.routes');
 const salesRoutes = require('../routes/sales.routes');
 const visitRoutes = require('../routes/visit.routes');
