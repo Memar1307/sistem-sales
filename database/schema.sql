@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS targets (
+    id SERIAL PRIMARY KEY,
+    sales_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    bulan INTEGER NOT NULL,
+    tahun INTEGER NOT NULL,
+    target_order INTEGER DEFAULT 100,
+    target_kunjungan INTEGER DEFAULT 50,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

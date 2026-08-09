@@ -1,0 +1,309 @@
+:root {
+    --primary: #0284c7;
+    --primary-dark: #0369a1;
+    --primary-gradient: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+    --bg-app: #f4f6f9;
+    --card-bg: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --radius-xl: 20px;
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --shadow-soft: 0 10px 25px -5px rgba(2, 132, 199, 0.1), 0 8px 10px -6px rgba(2, 132, 199, 0.1);
+    --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+body {
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    padding-bottom: 95px;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Header Profil ala Referensi */
+.dashboard-header {
+    background: var(--card-bg);
+    padding: 1.5rem 1.25rem 1rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.user-profile-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.avatar-placeholder {
+    width: 45px;
+    height: 45px;
+    background: var(--primary-gradient);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    box-shadow: var(--shadow-card);
+}
+
+.user-profile-info h4 {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.user-profile-info h2 {
+    font-size: 1.05rem;
+    color: var(--text-main);
+    font-weight: 700;
+}
+
+.notification-bell {
+    width: 40px;
+    height: 40px;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s;
+}
+
+.notification-bell:hover {
+    background: #e2e8f0;
+}
+
+/* Container Utama */
+.app-content {
+    padding: 1.25rem;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+/* Kartu Sapaan / Hero Card */
+.hero-greeting {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 1rem;
+    line-height: 1.2;
+}
+
+/* Search Bar Modern */
+.search-box {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.85rem 1rem 0.85rem 2.75rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    font-size: 0.9rem;
+    outline: none;
+    box-shadow: var(--shadow-card);
+    transition: border-color 0.2s;
+}
+
+.search-box input:focus {
+    border-color: var(--primary);
+}
+
+.search-box svg {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+
+/* Kartu Target Interaktif ala Referensi Card */
+.active-task-card {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 1.5rem;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-soft);
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.active-task-card::after {
+    content: '';
+    position: absolute;
+    right: -20px;
+    bottom: -20px;
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.task-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.task-card-header span {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.25rem 0.65rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.task-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.task-stat-item h3 {
+    font-size: 0.75rem;
+    opacity: 0.8;
+    margin-bottom: 0.25rem;
+}
+
+.task-stat-item p {
+    font-size: 1.35rem;
+    font-weight: 800;
+}
+
+.btn-card-action {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: white;
+    color: var(--primary-dark);
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: transform 0.1s;
+}
+
+.btn-card-action:active {
+    transform: scale(0.98);
+}
+
+/* Section Block Riwayat */
+.section-block {
+    background: var(--card-bg);
+    padding: 1.25rem;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border-color);
+}
+
+.section-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-header-flex h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.view-all-link {
+    font-size: 0.8rem;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* Riwayat Item */
+.history-item {
+    padding: 0.85rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.history-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.history-item strong {
+    font-size: 0.9rem;
+    color: var(--text-main);
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.history-item p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+}
+
+.empty-text {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 1rem 0;
+    font-style: italic;
+}
+
+/* Bottom Navigation Estetik */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--card-bg);
+    display: flex;
+    justify-content: space-around;
+    padding: 0.65rem 0.25rem;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--border-color);
+    z-index: 100;
+}
+
+.bottom-nav a {
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    transition: color 0.2s;
+}
+
+.bottom-nav a.active {
+    color: var(--primary);
+    font-weight: 700;
+}
