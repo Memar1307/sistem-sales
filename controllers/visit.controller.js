@@ -19,18 +19,25 @@ class VisitController {
             const salesId = req.user.id;
             const { pharmacy_id, latitude, longitude, activity, keterangan } = req.body;
 
-            // 1. Ambil koordinat apotek untuk validasi radius (misal: maks 100 meter / 0.1 km)
+            // 1. Tangkap file foto jika dikirim lewat multipart/form-data (Multer)
+            let fotoPath = null;
+            if (req.file) {
+                fotoPath = `/uploads/${req.file.filename}`;
+            } else if (req.body.foto) {
+                fotoPath = req.body.foto;
+            }
+
+            // 2. Ambil koordinat apotek untuk validasi radius (misal: maks 150 meter)
             const pharmRes = await client.query('SELECT latitude, longitude, nama_apotek FROM pharmacies WHERE id = $1', [pharmacy_id]);
             if (pharmRes.rows.length === 0) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({ error: 'Apotek tidak ditemukan.' });
             }
 
-            const apotek = pharmRes.rows.get ? pharmRes.rows.get(0) : pharmRes.rows[0];
+            const apotek = pharmRes.rows[0];
             const distKm = calculateDistance(latitude, longitude, parseFloat(apotek.latitude), parseFloat(apotek.longitude));
             const distMeter = distKm * 1000;
 
-            // Validasi radius (misalnya toleransi 150 meter dari titik apotek)
             const MAX_RADIUS_METERS = 150;
             if (distMeter > MAX_RADIUS_METERS) {
                 await client.query('ROLLBACK');
@@ -39,17 +46,17 @@ class VisitController {
                 });
             }
 
-            // 2. Simpan data kunjungan ke tabel visits
+            // 3. Simpan data kunjungan ke tabel visits (termasuk kolom foto)
             const currentTime = new Date().toTimeString().split(' ')[0];
             const visitInsert = `
-                INSERT INTO visits (sales_id, pharmacy_id, tanggal, jam_checkin, latitude, longitude, catatan)
-                VALUES ($1, $2, CURRENT_DATE, $3, $4, $5, $6)
+                INSERT INTO visits (sales_id, pharmacy_id, tanggal, jam_checkin, latitude, longitude, catatan, foto)
+                VALUES ($1, $2, CURRENT_DATE, $3, $4, $5, $6, $7)
                 RETURNING id;
             `;
-            const visitRes = await client.query(visitInsert, [salesId, pharmacy_id, currentTime, latitude, longitude, keterangan || '']);
+            const visitRes = await client.query(visitInsert, [salesId, pharmacy_id, currentTime, latitude, longitude, keterangan || '', fotoPath]);
             const visitId = visitRes.rows[0].id;
 
-            // 3. Simpan aktivitas kunjungan (order / tidak_order / inkaso)
+            // 4. Simpan aktivitas kunjungan (order / tidak_order / inkaso)
             const activityInsert = `
                 INSERT INTO visit_activities (visit_id, activity, keterangan)
                 VALUES ($1, $2, $3);
@@ -69,7 +76,7 @@ class VisitController {
 
 // Fungsi rumus Haversine untuk menghitung jarak GPS (dalam Kilometer)
 function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius bumi dalam km
+    const R = 6371; 
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a =

@@ -13,31 +13,36 @@ app.use(express.urlencoded({ extended: true }));
 // Melayani file statis dari root direktori
 app.use(express.static(path.join(__dirname, '../')));
 
-// Tambahkan rute eksplisit untuk halaman utama
+// Tambahan: Melayani folder uploads secara eksplisit agar foto kunjungan dapat diakses browser
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
+// Tambahkan rute eksplisit untuk halaman utama[cite: 5]
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../index.html'));
 });
 
-// Import Routes
+// Import Routes[cite: 5]
 const authRoutes = require('../routes/auth.routes');
 const salesRoutes = require('../routes/sales.routes');
 const visitRoutes = require('../routes/visit.routes');
 const inkasoRoutes = require('../routes/inkaso.routes');
 const productRoutes = require('../routes/product.routes');
+const managerRoutes = require('../routes/manager.routes');
 
-// Routes API
+// Routes API[cite: 5]
 app.use('/api/auth', authRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/visits', visitRoutes);
 app.use('/api/sales', inkasoRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/manager', managerRoutes);
 
-// Root endpoint untuk health check API
+// Root endpoint untuk health check API[cite: 5]
 app.get('/api', (req, res) => {
     res.json({ status: 'API SFA PWA Distributor Farmasi Running Successfully' });
 });
 
-// Handler untuk Vercel / Local Development
+// Handler untuk Vercel / Local Development[cite: 5]
 if (process.env.NODE_ENV !== 'production') {
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {

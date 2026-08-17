@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Sales</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-page: #f4f6f9;
+            --sidebar-bg: #ffffff;
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-page); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+        sidebar { width: 260px; background: var(--sidebar-bg); height: 100%; padding: 24px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: flex-start; gap: 20px; }
+        .sidebar-top h2 { color: var(--primary); font-size: 20px; margin: 0 0 30px 0; display: flex; align-items: center; gap: 10px; }
+        sidebar ul { list-style: none; padding: 0; margin: 0; }
+        sidebar ul li { padding: 12px 16px; margin-bottom: 8px; border-radius: 10px; cursor: pointer; transition: all 0.2s; color: var(--text-muted); font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 12px; }
+        sidebar ul li:hover { background: var(--primary-light); color: var(--primary); }
+        sidebar ul li.active { background: var(--primary); color: white; }
+        .btn-logout { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s; margin-top: 15px; }
+        .btn-logout:hover { background: #fee2e2; }
+
+        main { flex-grow: 1; padding: 30px; overflow-y: auto; height: 100vh; box-sizing: border-box; }
+        .dashboard-container { max-width: 1200px; margin: 0 auto; }
+        
+        .header-bar { margin-bottom: 25px; }
+        .header-bar h1 { font-size: 24px; font-weight: 700; color: #0f172a; margin: 0; }
+        .header-bar p { color: var(--text-muted); margin-top: 5px; }
+
+        .table-container { background: white; border-radius: 14px; border: 1px solid var(--border-color); box-shadow: var(--shadow); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th { background: #f8fafc; color: var(--text-muted); font-weight: 600; padding: 16px 20px; border-bottom: 1px solid var(--border-color); }
+        td { padding: 16px 20px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+        tr:last-child td { border-bottom: none; }
+        tr.sales-row { cursor: pointer; transition: background 0.15s; }
+        tr.sales-row:hover { background: #f1f5f9; }
+
+        .badge { background: #eff6ff; color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .badge-order { background: #dcfce7; color: #15803d; }
+        .badge-no-order { background: #fee2e2; color: #b91c1c; }
+
+        /* Modal Detail */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background: white; width: 700px; max-height: 85vh; border-radius: 14px; padding: 25px; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; }
+        .modal-header h2 { font-size: 18px; margin: 0; color: #0f172a; }
+        .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); }
+        
+        .section-title { font-size: 14px; font-weight: 700; color: var(--primary); margin: 15px 0 10px 0; text-transform: uppercase; }
+        .sub-box { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; margin-bottom: 10px; font-size: 13px; line-height: 1.6; }
+        
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(244, 246, 249, 0.9);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loadingOverlay">
+        <i class="fa-solid fa-circle-notch fa-spin fa-3x" style="color: var(--primary);"></i>
+        <p style="margin-top: 15px; font-weight: 600; color: var(--text-main); font-size: 15px;">Memuat data sales...</p>
+    </div>
+
+    <!-- Modal Detail Aktivitas -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalSalesName">Detail Aktivitas Sales</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBody">
+                <!-- Konten dinamis aktivitas -->
+            </div>
+        </div>
+    </div>
+
+    <sidebar>
+        <div class="sidebar-top">
+            <h2><i class="fa-solid fa-pills"></i> TFU Sales</h2>
+            <ul>
+                <li onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
+                <li class="active"><i class="fa-solid fa-users-gear"></i> Manajemen Sales</li>
+                <li onclick="window.location.href='manajemen-apotek.html'"><i class="fa-solid fa-hospital"></i> Manajemen Apotek</li>
+            </ul>
+        </div>
+        <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </sidebar>
+
+    <main>
+        <div class="dashboard-container">
+            <div class="header-bar">
+                <h1>Manajemen Sales</h1>
+                <p>Klik pada baris sales untuk melihat riwayat kunjungan hari ini dan kemarin</p>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Sales</th>
+                            <th>Username</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salesTableBody">
+                        <!-- Data akan dimuat melalui JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const token = localStorage.getItem('token');
+
+        // Fungsi untuk menambahkan +14 jam secara langsung pada string waktu database agar sesuai WIB
+        function formatWIB(rawDateStr) {
+            if (!rawDateStr) return '-';
+            let str = String(rawDateStr).trim();
+            
+            let match = str.match(/(\d{2}):(\d{2})(?::(\d{2}))?/);
+            if (match) {
+                let hour = parseInt(match[1], 10);
+                let minute = parseInt(match[2], 10);
+                
+                hour = (hour + 14) % 24;
+                
+                return String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
+            }
+            return rawDateStr;
+        }
+
+        // Helper untuk mendapatkan tanggal format YYYY-MM-DD setelah ditambah 14 jam
+        function getFormattedDateOnly(rawDateStr) {
+            if (!rawDateStr) return '';
+            let str = String(rawDateStr).trim();
+            let match = str.match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+            let d;
+            if (match) {
+                d = new Date(Date.UTC(parseInt(match[1]), parseInt(match[2])-1, parseInt(match[3]), parseInt(match[4]), parseInt(match[5]), match[6]?parseInt(match[6]):0));
+            } else {
+                d = new Date(str);
+                if (isNaN(d.getTime())) return '';
+            }
+            d.setTime(d.getTime() + (14 * 60 * 60 * 1000));
+            let y = d.getUTCFullYear();
+            let m = String(d.getUTCMonth() + 1).padStart(2, '0');
+            let day = String(d.getUTCDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        async function loadSalesData() {
+            try {
+                const response = await fetch('/api/manager/sales', {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                
+                const tbody = document.getElementById('salesTableBody');
+                tbody.innerHTML = '';
+
+                if (response.ok && result.success && result.data.length > 0) {
+                    result.data.forEach(sales => {
+                        const nama = sales.nama || sales.name || sales.username || '-';
+                        const username = sales.username || '-';
+                        const status = sales.status || 'aktif';
+                        const id = sales.id;
+
+                        tbody.innerHTML += `
+                            <tr class="sales-row" onclick="openSalesDetail('${id}', '${nama}')">
+                                <td style="font-weight: 600;"><i class="fa-solid fa-user-tie" style="color: var(--primary); margin-right: 8px;"></i>${nama}</td>
+                                <td>${username}</td>
+                                <td><span class="badge">${status}</span></td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 30px;">Belum ada data sales.</td></tr>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('salesTableBody').innerHTML = `<tr><td colspan="3" style="text-align: center; color: #dc2626; padding: 30px;">Gagal memuat data sales.</td></tr>`;
+            } finally {
+                const loader = document.getElementById('loadingOverlay');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.remove(), 300);
+                }
+            }
+        }
+
+        function renderVisitList(visitArray) {
+            if (!visitArray || visitArray.length === 0) {
+                return `<p style="color: var(--text-muted); font-size: 13px; margin-bottom: 15px;">Tidak ada riwayat kunjungan.</p>`;
+            }
+            let html = '';
+            visitArray.forEach(v => {
+                const photoUrl = v.visit_foto || v.activity_foto || v.visit_photo || v.activity_photo || v.foto || v.photo || v.image || v.bukti_foto;
+                const rawActivity = v.activity ? v.activity.toLowerCase() : 'kunjungan';
+                let badgeClass = 'badge';
+                let activityLabel = rawActivity.toUpperCase();
+                
+                if (rawActivity === 'order') {
+                    badgeClass = 'badge badge-order';
+                    activityLabel = 'ORDER';
+                } else if (rawActivity === 'tidak_order' || rawActivity === 'tidak order') {
+                    badgeClass = 'badge badge-no-order';
+                    activityLabel = 'TIDAK ORDER';
+                }
+
+                const ket = v.activity_keterangan || v.keterangan || v.notes || '-';
+                const apotekName = v.apotek_nama || v.nama_apotek || v.outlet_name || 'Kunjungan Outlet';
+                const waktu = formatWIB(v.created_at);
+
+                html += `
+                    <div class="sub-box" style="display: flex; gap: 15px; align-items: flex-start;">
+                        <div style="flex: 1;">
+                            <strong>Apotek/Outlet:</strong> ${apotekName}<br>
+                            <strong>Status:</strong> <span class="${badgeClass}">${activityLabel}</span><br>
+                            <strong>Keterangan:</strong> ${ket}<br>
+                            <strong>Waktu:</strong> ${waktu} WIB
+                        </div>
+                `;
+                if (photoUrl) {
+                    html += `
+                        <div style="flex-shrink: 0; text-align: center;">
+                            <div style="font-size: 11px; font-weight: 600; margin-bottom: 5px; color: var(--text-muted);">Bukti Foto:</div>
+                            <img src="${photoUrl}" alt="Bukti" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer;" onclick="window.open('${photoUrl}', '_blank')">
+                        </div>
+                    `;
+                }
+                html += `</div>`;
+            });
+            return html;
+        }
+
+        async function openSalesDetail(salesId, salesName) {
+            document.getElementById('modalSalesName').innerText = `Aktivitas Sales: ${salesName}`;
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 20px;"><i class="fa-solid fa-circle-notch fa-spin"></i> Memuat detail...</p>`;
+            document.getElementById('detailModal').style.display = 'flex';
+
+            try {
+                const response = await fetch(`/api/manager/sales/${salesId}/detail`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    const { visits } = result.data;
+                    const allVisits = visits || [];
+
+                    // Dapatkan tanggal Hari Ini dan Kemarin dalam format YYYY-MM-DD (WIB)
+                    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+                    
+                    let dYesterday = new Date();
+                    dYesterday.setDate(dYesterday.getDate() - 1);
+                    const yesterdayStr = dYesterday.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+
+                    // Filter kunjungan berdasarkan tanggal
+                    const visitsHariIni = allVisits.filter(v => getFormattedDateOnly(v.created_at) === todayStr);
+                    const visitsKemarin = allVisits.filter(v => getFormattedDateOnly(v.created_at) === yesterdayStr);
+
+                    let html = '';
+
+                    // 1. Kunjungan Hari Ini
+                    html += `<div class="section-title"><i class="fa-solid fa-map-location-dot"></i> Riwayat Kunjungan Hari Ini (${visitsHariIni.length})</div>`;
+                    html += renderVisitList(visitsHariIni);
+
+                    // 2. Kunjungan Kemarin
+                    html += `<div class="section-title" style="margin-top: 25px;"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Kunjungan Kemarin (${visitsKemarin.length})</div>`;
+                    html += renderVisitList(visitsKemarin);
+
+                    modalBody.innerHTML = html;
+                } else {
+                    modalBody.innerHTML = `<p style="color: #dc2626; text-align: center;">Gagal memuat detail aktivitas sales.</p>`;
+                }
+            } catch (err) {
+                console.error(err);
+                modalBody.innerHTML = `<p style="color: #dc2626; text-align: center;">Terjadi kesalahan sistem.</p>`;
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        function logout() { 
+            localStorage.clear(); 
+            window.location.href = '/index.html'; 
+        }
+
+        window.onload = loadSalesData;
+    </script>
+</body>
+</html>

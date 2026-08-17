@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const submitBtn = document.getElementById('submitBtn');
     const radiusWarning = document.getElementById('radiusWarning');
 
-    // 1. Ambil daftar apotek dari backend dan simpan koordinatnya pada dataset option
+    // 1. Ambil daftar apotek dari backend dan simpan koordinatnya pada dataset option[cite: 4]
     try {
         const pharmacies = await apiRequest('/visits/pharmacies');
         pharmacySelect.innerHTML = '<option value="">-- Pilih Apotek Tujuan --</option>';
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error(err);
     }
 
-    // 2. Dapatkan Lokasi GPS Browser
+    // 2. Dapatkan Lokasi GPS Browser[cite: 4]
     if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         gpsStatus.innerHTML = "⚠️ Browser Anda tidak Mendukung Geolocation.";
     }
 
-    // 3. Handle Submit Form Check-in dengan Validasi Radius & Foto Kamera
+    // 3. Handle Submit Form Check-in dengan Validasi Radius & Foto Kamera[cite: 4]
     document.getElementById('visitForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!currentLat || !currentLon) {
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const targetLat = parseFloat(selectedOption.dataset.lat);
         const targetLon = parseFloat(selectedOption.dataset.lon);
 
-        // Validasi radius lokal (maksimal 150 meter)
+        // Validasi radius lokal (maksimal 150 meter)[cite: 4]
         const distKm = calculateDistance(currentLat, currentLon, targetLat, targetLon);
         const distMeter = distKm * 1000;
         const MAX_RADIUS_METERS = 150;
@@ -94,18 +94,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         submitBtn.disabled = true;
 
         try {
-            const response = await apiRequest('/visits/checkin', {
+            // Menggunakan FormData agar file foto dan data teks terkirim bersamaan
+            const formData = new FormData();
+            formData.append('pharmacy_id', parseInt(pharmacy_id));
+            formData.append('latitude', currentLat);
+            formData.append('longitude', currentLon);
+            formData.append('activity', activity);
+            formData.append('keterangan', keterangan);
+            formData.append('foto', fotoInput.files[0]);
+
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/visits/checkin', {
                 method: 'POST',
-                body: JSON.stringify({
-                    pharmacy_id: parseInt(pharmacy_id),
-                    latitude: currentLat,
-                    longitude: currentLon,
-                    activity,
-                    keterangan
-                })
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
             });
 
-            alert(response.message || 'Kunjungan berhasil dicatat!');
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'Gagal melakukan check-in.');
+            }
+
+            alert(result.message || 'Kunjungan berhasil dicatat!');
             window.location.href = '/pages/sales/dashboard.html';
         } catch (err) {
             console.error('Error detail:', err);
@@ -116,7 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
-// Fungsi rumus Haversine untuk menghitung jarak GPS (dalam Kilometer) di frontend
+// Fungsi rumus Haversine untuk menghitung jarak GPS (dalam Kilometer) di frontend[cite: 4]
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; 
     const dLat = (lat2 - lat1) * (Math.PI / 180);

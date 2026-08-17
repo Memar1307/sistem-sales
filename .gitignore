@@ -1,0 +1,29 @@
+# Environment & Secrets
+.env
+.env.local
+config.json
+
+# Dependencies
+node_modules/
+vendor/
+
+# Uploads & Media
+uploads/
+storage/
+public/uploads/
+
+# Logs & Cache
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+.cache/
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE / Editor Files
+.vscode/
+.idea/

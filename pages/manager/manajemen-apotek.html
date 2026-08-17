@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Apotek</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-page: #f4f6f9;
+            --sidebar-bg: #ffffff;
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-page); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+        sidebar { width: 260px; background: var(--sidebar-bg); height: 100%; padding: 24px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: flex-start; gap: 20px; box-sizing: border-box;}
+        .sidebar-top h2 { color: var(--primary); font-size: 20px; margin: 0 0 30px 0; display: flex; align-items: center; gap: 10px; }
+        sidebar ul { list-style: none; padding: 0; margin: 0; }
+        sidebar ul li { padding: 12px 16px; margin-bottom: 8px; border-radius: 10px; cursor: pointer; transition: all 0.2s; color: var(--text-muted); font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 12px; }
+        sidebar ul li:hover { background: var(--primary-light); color: var(--primary); }
+        sidebar ul li.active { background: var(--primary); color: white; }
+        .btn-logout { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s; margin-top: 15px; }
+        .btn-logout:hover { background: #fee2e2; }
+
+        main { flex-grow: 1; padding: 30px; overflow-y: auto; height: 100vh; box-sizing: border-box; }
+        .dashboard-container { max-width: 1200px; margin: 0 auto; }
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .header-bar h1 { font-size: 24px; font-weight: 700; color: #0f172a; margin: 0; }
+        .header-bar p { color: var(--text-muted); margin-top: 5px; }
+
+        .table-container { background: white; border-radius: 14px; border: 1px solid var(--border-color); box-shadow: var(--shadow); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th { background: #f8fafc; color: var(--text-muted); font-weight: 600; padding: 16px 20px; border-bottom: 1px solid var(--border-color); }
+        td { padding: 16px 20px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+        tr:last-child td { border-bottom: none; }
+        tr.clickable-row { cursor: pointer; transition: background 0.15s; }
+        tr.clickable-row:hover { background: #f1f5f9; }
+
+        #modalDetail {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; width: 900px; max-height: 85vh; border-radius: 16px;
+            display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        .modal-header { padding: 20px 24px; background: #f8fafc; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { margin: 0; font-size: 18px; color: var(--text-main); }
+        .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); }
+        .modal-body { padding: 24px; overflow-y: auto; flex-grow: 1; }
+        
+        .section-title { font-size: 15px; font-weight: 600; color: var(--primary); margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px; }
+
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(244, 246, 249, 0.9);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loadingOverlay">
+        <i class="fa-solid fa-circle-notch fa-spin fa-3x" style="color: var(--primary);"></i>
+        <p style="margin-top: 15px; font-weight: 600; color: var(--text-main); font-size: 15px;">Memuat data apotek...</p>
+    </div>
+
+    <!-- MODAL DETAIL APOTEK -->
+    <div id="modalDetail">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalPharmacyName"><i class="fa-solid fa-hospital" style="margin-right: 8px;"></i> Detail Apotek</h3>
+                <button class="close-btn" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="pharmacyMeta" style="background: #f8fafc; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 14px; border: 1px solid var(--border-color);">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--primary);"></i> Memuat informasi...
+                </div>
+
+                <div class="section-title"><i class="fa-solid fa-file-invoice-dollar"></i> Riwayat Invoice / Pesanan</div>
+                <div class="table-container" style="margin-bottom: 25px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No. Faktur</th>
+                                <th>Tanggal</th>
+                                <th>Total Nilai</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoiceTableBody">
+                            <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;"><i class="fa-solid fa-circle-notch fa-spin" style="color: var(--primary);"></i> Memuat data invoice...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="section-title"><i class="fa-solid fa-money-bill-transfer"></i> Riwayat Inkaso / Pembayaran</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID Inkaso</th>
+                                <th>Tanggal</th>
+                                <th>Jumlah Bayar</th>
+                                <th>Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inkasoTableBody">
+                            <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;"><i class="fa-solid fa-circle-notch fa-spin" style="color: var(--primary);"></i> Memuat data inkaso...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <sidebar>
+        <div class="sidebar-top">
+            <h2><i class="fa-solid fa-pills"></i> TFU Sales</h2>
+            <ul>
+                <li onclick="window.location.href='dashboard.html'"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
+                <li onclick="window.location.href='manajemen-sales.html'"><i class="fa-solid fa-users-gear"></i> Manajemen Sales</li>
+                <li class="active"><i class="fa-solid fa-hospital"></i> Manajemen Apotek</li>
+            </ul>
+        </div>
+        <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </sidebar>
+
+    <main>
+        <div class="dashboard-container">
+            <div class="header-bar">
+                <div>
+                    <h1>Manajemen Apotek</h1>
+                    <p>Daftar seluruh apotek atau outlet partner</p>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Apotek / Outlet</th>
+                            <th>Alamat</th>
+                            <th>Pemilik / Penanggung Jawab</th>
+                            <th>No. Telepon</th>
+                        </tr>
+                    </thead>
+                    <tbody id="apotekTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const token = localStorage.getItem('token');
+
+        async function loadApotekData() {
+            try {
+                const response = await fetch('/api/manager/apotek', {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                
+                const tbody = document.getElementById('apotekTableBody');
+                tbody.innerHTML = '';
+
+                if (response.ok && result.success && result.data.length > 0) {
+                    result.data.forEach(item => {
+                        const id = item.id;
+                        const nama = item.nama || item.nama_apotek || item.outlet_name || '-';
+                        const alamat = item.alamat || item.address || '-';
+                        const pemilik = item.pemilik || item.owner || '-';
+                        const telepon = item.telepon || item.phone || '-';
+
+                        tbody.innerHTML += `
+                            <tr class="clickable-row" onclick="openPharmacyDetail(${id}, '${nama.replace(/'/g, "\\'")}')">
+                                <td style="font-weight: 600;"><i class="fa-solid fa-hospital-user" style="color: var(--primary); margin-right: 8px;"></i>${nama}</td>
+                                <td>${alamat}</td>
+                                <td>${pemilik}</td>
+                                <td>${telepon}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 30px;">Belum ada data apotek.</td></tr>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('apotekTableBody').innerHTML = `<tr><td colspan="4" style="text-align: center; color: #dc2626; padding: 30px;">Gagal memuat data apotek.</td></tr>`;
+            } finally {
+                const loader = document.getElementById('loadingOverlay');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.remove(), 300);
+                }
+            }
+        }
+
+        async function openPharmacyDetail(id, name) {
+            const modal = document.getElementById('modalDetail');
+            document.getElementById('modalPharmacyName').innerHTML = `<i class="fa-solid fa-hospital" style="margin-right: 8px; color: var(--primary);"></i> Detail: ${name}`;
+            
+            // Set Loading state sebelum fetch data
+            document.getElementById('pharmacyMeta').innerHTML = `<i class="fa-solid fa-circle-notch fa-spin" style="color: var(--primary);"></i> Memuat informasi...`;
+            document.getElementById('invoiceTableBody').innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;"><i class="fa-solid fa-circle-notch fa-spin" style="color: var(--primary);"></i> Memuat data invoice...</td></tr>`;
+            document.getElementById('inkasoTableBody').innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;"><i class="fa-solid fa-circle-notch fa-spin" style="color: var(--primary);"></i> Memuat data inkaso...</td></tr>`;
+            
+            modal.style.display = 'flex';
+
+            try {
+                const response = await fetch(`/api/manager/apotek/${id}/detail`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    const { pharmacy, invoices, inkaso } = result.data;
+
+                    document.getElementById('pharmacyMeta').innerHTML = `
+                        <strong>Alamat:</strong> ${pharmacy.alamat || pharmacy.address || '-'}<br>
+                        <strong>Pemilik:</strong> ${pharmacy.pemilik || pharmacy.owner || '-'}<br>
+                        <strong>Telepon:</strong> ${pharmacy.telepon || pharmacy.phone || '-'}
+                    `;
+
+                    // Invoices Table
+                    const invBody = document.getElementById('invoiceTableBody');
+                    invBody.innerHTML = '';
+                    if (invoices && invoices.length > 0) {
+                        invoices.forEach(inv => {
+                            const invNo = inv.nomor_faktur || `#${inv.id}` || '-';
+                            const date = inv.created_at ? new Date(inv.created_at).toLocaleDateString('id-ID') : '-';
+                            const amount = Number(inv.total || inv.total_amount || inv.amount || 0);
+                            const status = inv.status || 'Selesai';
+                            invBody.innerHTML += `
+                                <tr>
+                                    <td><b>${invNo}</b></td>
+                                    <td>${date}</td>
+                                    <td>Rp ${amount.toLocaleString('id-ID')}</td>
+                                    <td><span style="background: #eff6ff; color: var(--primary); padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">${status}</span></td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        invBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Tidak ada riwayat invoice.</td></tr>`;
+                    }
+
+                    // Inkaso Table
+                    const inkBody = document.getElementById('inkasoTableBody');
+                    inkBody.innerHTML = '';
+                    if (inkaso && inkaso.length > 0) {
+                        inkaso.forEach(ink => {
+                            const inkId = ink.id || '-';
+                            const date = ink.created_at ? new Date(ink.created_at).toLocaleDateString('id-ID') : '-';
+                            const amount = Number(ink.amount || ink.total || ink.jumlah || 0);
+                            const notes = ink.keterangan || ink.notes || '-';
+                            inkBody.innerHTML += `
+                                <tr>
+                                    <td><b>#${inkId}</b></td>
+                                    <td>${date}</td>
+                                    <td>Rp ${amount.toLocaleString('id-ID')}</td>
+                                    <td>${notes}</td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        inkBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Tidak ada riwayat inkaso.</td></tr>`;
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading detail:', e);
+                document.getElementById('pharmacyMeta').innerHTML = `<span style="color: #dc2626;">Gagal memuat informasi.</span>`;
+                document.getElementById('invoiceTableBody').innerHTML = `<tr><td colspan="4" style="text-align: center; color: #dc2626; padding: 20px;">Gagal memuat data.</td></tr>`;
+                document.getElementById('inkasoTableBody').innerHTML = `<tr><td colspan="4" style="text-align: center; color: #dc2626; padding: 20px;">Gagal memuat data.</td></tr>`;
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modalDetail').style.display = 'none';
+        }
+
+        function logout() { 
+            localStorage.clear(); 
+            window.location.href = '/index.html'; 
+        }
+
+        window.onload = loadApotekData;
+    </script>
+</body>
+</html>

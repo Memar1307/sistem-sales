@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pencatatan Inkaso - SFA Farmasi</title>
+    <title>Pencatatan Inkaso</title>
     <link rel="stylesheet" href="/css/global.css">
     <link rel="stylesheet" href="/css/sales.css">
 </head>
@@ -43,7 +43,8 @@
 
                 <div style="margin-bottom: 1.25rem;">
                     <label style="display:block; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#1e40af; margin-bottom:0.5rem;">Nominal Pembayaran (Rp)</label>
-                    <input type="number" id="nominalInput" placeholder="Masukkan jumlah yang dibayar" required style="width:100%; padding:0.85rem 1rem; border-radius:var(--radius-md); border:1px solid #bfdbfe; outline:none; background:#f8fafc; font-size:0.9rem; box-shadow:var(--shadow-card);">
+                    <!-- Ditambahkan min="0", onkeydown untuk blokir minus/huruf, dan oninput untuk validasi tambahan -->
+                    <input type="number" id="nominalInput" placeholder="Masukkan jumlah yang dibayar" min="0" step="any" onkeydown="if(['-', 'e', 'E', '+'].includes(event.key)) event.preventDefault();" oninput="if(this.value < 0) this.value = '';" required style="width:100%; padding:0.85rem 1rem; border-radius:var(--radius-md); border:1px solid #bfdbfe; outline:none; background:#f8fafc; font-size:0.9rem; box-shadow:var(--shadow-card);">
                 </div>
 
                 <div style="margin-bottom: 1.25rem;">
