@@ -1,36 +1,34 @@
 const multer = require('multer');
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
 
-// Pastikan folder public/uploads ada
-const uploadDir = 'public/uploads';
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+// Cek apakah sedang berjalan di Vercel (Production)
+const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
+
+// Tentukan lokasi penyimpanan: gunakan '/tmp' jika di Vercel, atau 'public/uploads' jika di lokal (komputer)
+const uploadDir = isVercel ? '/tmp' : path.join(__dirname, '../public/uploads');
+
+// Buat folder hanya jika bukan di Vercel (atau gunakan try-catch agar tidak crash)
+try {
+    if (!isVercel && !fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+    }
+} catch (err) {
+    console.error('Gagal membuat folder upload:', err.message);
 }
 
-// Konfigurasi penyimpanan Multer
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'visit-' + uniqueSuffix + path.extname(file.originalname));
+        cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
 
-// Filter jenis file (hanya gambar)
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-        cb(null, true);
-    } else {
-        cb(new Error('Hanya file gambar yang diperbolehkan!'), false);
-    }
-};
-
-const upload = multer({
+const upload = multer({ 
     storage: storage,
-    fileFilter: fileFilter,
     limits: { fileSize: 5 * 1024 * 1024 } // Batas ukuran file 5MB
 });
 
