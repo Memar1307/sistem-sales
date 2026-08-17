@@ -20,7 +20,7 @@ class VisitController {
             const salesId = req.user.id;
             const { pharmacy_id, latitude, longitude, activity, keterangan } = req.body;
 
-            // Tangkap foto secara universal (mendukung req.file, req.files, maupun kiriman Base64 di body)
+            // Tangkap foto secara aman & bersihkan dari error prefix /uploads/
             let fotoPath = null;
             
             const uploadedFile = req.file || 
@@ -43,9 +43,18 @@ class VisitController {
                 }
             } 
             
-            // Jika dikirim langsung sebagai string Base64 atau URL di body request
+            // Tangkap dari body request dan bersihkan jika ada /uploads/ yang menempel pada base64
             if (!fotoPath) {
-                fotoPath = req.body.foto || req.body.image || req.body.bukti_foto || req.body.file || null;
+                let rawFoto = req.body.foto || req.body.image || req.body.bukti_foto || req.body.file || null;
+                if (rawFoto) {
+                    if (typeof rawFoto === 'string' && rawFoto.startsWith('/uploads/data:')) {
+                        fotoPath = rawFoto.replace('/uploads/', '');
+                    } else if (rawFoto === '/uploads/undefined' || rawFoto === 'undefined') {
+                        fotoPath = null;
+                    } else {
+                        fotoPath = rawFoto;
+                    }
+                }
             }
 
             // Validasi koordinat apotek & radius (maks 150 meter)
