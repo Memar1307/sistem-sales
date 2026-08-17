@@ -1,31 +1,33 @@
 const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
 
-// Cek apakah sedang berjalan di Vercel (Production)
-const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
-
-// Tentukan lokasi penyimpanan: gunakan '/tmp' jika di Vercel, atau 'public/uploads' jika di lokal (komputer)
-const uploadDir = isVercel ? '/tmp' : path.join(__dirname, '../public/uploads');
-
-// Buat folder hanya jika bukan di Vercel (atau gunakan try-catch agar tidak crash)
-try {
-    if (!isVercel && !fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+// Custom Storage Engine untuk mengubah file langsung menjadi Base64 Data URL
+class Base64Storage {
+    _handleFile(req, file, cb) {
+        let chunks = [];
+        file.stream.on('data', (chunk) => {
+            chunks.push(chunk);
+        });
+        file.stream.on('end', () => {
+            const buffer = Buffer.concat(chunks);
+            const b64 = buffer.toString('base64');
+            const dataUrl = `data:${file.mimetype};base64,${b64}`;
+            
+            cb(null, {
+                path: dataUrl,
+                size: buffer.length
+            });
+        });
+        file.stream.on('error', (err) => {
+            cb(err);
+        });
     }
-} catch (err) {
-    console.error('Gagal membuat folder upload:', err.message);
+
+    _removeFile(req, file, cb) {
+        cb(null);
+    }
 }
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
+const storage = new Base64Storage();
 
 const upload = multer({ 
     storage: storage,
