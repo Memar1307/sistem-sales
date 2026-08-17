@@ -20,10 +20,12 @@ class VisitController {
             const salesId = req.user.id;
             const { pharmacy_id, latitude, longitude, activity, keterangan } = req.body;
 
-            // 1. Tangkap file foto secara fleksibel (mendukung berbagai nama field & format base64)
+            // Tangkap foto secara universal (mendukung req.file, req.files, maupun kiriman Base64 di body)
             let fotoPath = null;
+            
             const uploadedFile = req.file || 
-                                 (req.files ? (req.files.foto || req.files.image || req.files.file || req.files[0]) : null);
+                (req.files && (req.files.foto || req.files.image || req.files.file || req.files[0])) ||
+                (Array.isArray(req.files) ? req.files[0] : null);
 
             if (uploadedFile) {
                 try {
@@ -37,17 +39,16 @@ class VisitController {
                         fotoPath = `data:${mimeType};base64,${uploadedFile.buffer.toString('base64')}`;
                     }
                 } catch (err) {
-                    console.error("Gagal memproses konversi foto:", err);
+                    console.error("Gagal memproses konversi file foto:", err);
                 }
-            } else if (req.body.foto) {
-                fotoPath = req.body.foto;
-            } else if (req.body.image) {
-                fotoPath = req.body.image;
-            } else if (req.body.bukti_foto) {
-                fotoPath = req.body.bukti_foto;
+            } 
+            
+            // Jika dikirim langsung sebagai string Base64 atau URL di body request
+            if (!fotoPath) {
+                fotoPath = req.body.foto || req.body.image || req.body.bukti_foto || req.body.file || null;
             }
 
-            // 2. Ambil koordinat apotek untuk validasi radius (misal: maks 150 meter)
+            // Validasi koordinat apotek & radius (maks 150 meter)
             const pharmRes = await client.query('SELECT latitude, longitude, nama_apotek FROM pharmacies WHERE id = $1', [pharmacy_id]);
             if (pharmRes.rows.length === 0) {
                 await client.query('ROLLBACK');
@@ -66,7 +67,7 @@ class VisitController {
                 });
             }
 
-            // 3. Simpan data kunjungan ke tabel visits (termasuk kolom foto)
+            // Simpan data kunjungan ke tabel visits
             const currentTime = new Date().toTimeString().split(' ')[0];
             const visitInsert = `
                 INSERT INTO visits (sales_id, pharmacy_id, tanggal, jam_checkin, latitude, longitude, catatan, foto)
@@ -76,7 +77,7 @@ class VisitController {
             const visitRes = await client.query(visitInsert, [salesId, pharmacy_id, currentTime, latitude, longitude, keterangan || '', fotoPath]);
             const visitId = visitRes.rows[0].id;
 
-            // 4. Simpan aktivitas kunjungan (order / tidak_order / inkaso)
+            // Simpan aktivitas kunjungan
             const activityInsert = `
                 INSERT INTO visit_activities (visit_id, activity, keterangan)
                 VALUES ($1, $2, $3);
