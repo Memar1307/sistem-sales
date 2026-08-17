@@ -20,11 +20,8 @@ class VisitController {
             const salesId = req.user.id;
             const { pharmacy_id, latitude, longitude, activity, keterangan } = req.body;
 
-            // --- DEBUG LOGS ---
-            console.log("=== DEBUG CHECK-IN FOTO ===");
-            console.log("req.file:", req.file);
-            console.log("req.files:", req.files);
-            console.log("req.body keys:", Object.keys(req.body));
+            // Normalisasi activity menjadi lowercase agar cocok dengan query dashboard (misal: 'order')
+            const normalizedActivity = activity ? activity.toLowerCase() : '';
 
             let fotoPath = null;
             
@@ -34,19 +31,14 @@ class VisitController {
 
             if (uploadedFile) {
                 try {
-                    // 1. Jika menggunakan Base64Storage (path sudah langsung berupa data URL)
                     if (uploadedFile.path && uploadedFile.path.startsWith('data:')) {
                         fotoPath = uploadedFile.path;
-                    } 
-                    // 2. Jika path berupa file disk biasa
-                    else if (uploadedFile.path && fs.existsSync(uploadedFile.path)) {
+                    } else if (uploadedFile.path && fs.existsSync(uploadedFile.path)) {
                         const fileBuffer = fs.readFileSync(uploadedFile.path);
                         const mimeType = uploadedFile.mimetype || 'image/jpeg';
                         fotoPath = `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
                         fs.unlinkSync(uploadedFile.path);
-                    } 
-                    // 3. Jika menggunakan memoryStorage
-                    else if (uploadedFile.buffer) {
+                    } else if (uploadedFile.buffer) {
                         const mimeType = uploadedFile.mimetype || 'image/jpeg';
                         fotoPath = `data:${mimeType};base64,${uploadedFile.buffer.toString('base64')}`;
                     }
@@ -68,9 +60,7 @@ class VisitController {
                 }
             }
 
-            console.log("Status Foto yang akan disimpan ke DB:", fotoPath ? "TERISI (Base64)" : "NULL (Kosong dari Sales)");
-
-            // Ambil koordinat apotek untuk validasi radius (misal: maks 150 meter)
+            // Ambil koordinat apotek untuk validasi radius (maks 150 meter)
             const pharmRes = await client.query('SELECT latitude, longitude, nama_apotek FROM pharmacies WHERE id = $1', [pharmacy_id]);
             if (pharmRes.rows.length === 0) {
                 await client.query('ROLLBACK');
@@ -99,12 +89,12 @@ class VisitController {
             const visitRes = await client.query(visitInsert, [salesId, pharmacy_id, currentTime, latitude, longitude, keterangan || '', fotoPath]);
             const visitId = visitRes.rows[0].id;
 
-            // Simpan aktivitas kunjungan (order / tidak_order / inkaso)
+            // Simpan aktivitas kunjungan menggunakan normalizedActivity (agar terbaca sebagai order di dashboard)
             const activityInsert = `
                 INSERT INTO visit_activities (visit_id, activity, keterangan)
                 VALUES ($1, $2, $3);
             `;
-            await client.query(activityInsert, [visitId, activity, keterangan || '']);
+            await client.query(activityInsert, [visitId, normalizedActivity, keterangan || '']);
 
             await client.query('COMMIT');
             return res.status(201).json({ message: 'Kunjungan berhasil dicatat!', visit_id: visitId });
