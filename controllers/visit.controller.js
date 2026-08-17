@@ -20,7 +20,7 @@ class VisitController {
             const salesId = req.user.id;
             const { pharmacy_id, latitude, longitude, activity, keterangan } = req.body;
 
-            // --- DEBUG LOGS (Cek terminal server Anda untuk melihat isi kiriman dari sales) ---
+            // --- DEBUG LOGS ---
             console.log("=== DEBUG CHECK-IN FOTO ===");
             console.log("req.file:", req.file);
             console.log("req.files:", req.files);
@@ -34,12 +34,19 @@ class VisitController {
 
             if (uploadedFile) {
                 try {
-                    if (uploadedFile.path && fs.existsSync(uploadedFile.path)) {
+                    // 1. Jika menggunakan Base64Storage (path sudah langsung berupa data URL)
+                    if (uploadedFile.path && uploadedFile.path.startsWith('data:')) {
+                        fotoPath = uploadedFile.path;
+                    } 
+                    // 2. Jika path berupa file disk biasa
+                    else if (uploadedFile.path && fs.existsSync(uploadedFile.path)) {
                         const fileBuffer = fs.readFileSync(uploadedFile.path);
                         const mimeType = uploadedFile.mimetype || 'image/jpeg';
                         fotoPath = `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
                         fs.unlinkSync(uploadedFile.path);
-                    } else if (uploadedFile.buffer) {
+                    } 
+                    // 3. Jika menggunakan memoryStorage
+                    else if (uploadedFile.buffer) {
                         const mimeType = uploadedFile.mimetype || 'image/jpeg';
                         fotoPath = `data:${mimeType};base64,${uploadedFile.buffer.toString('base64')}`;
                     }
