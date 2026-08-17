@@ -1,4 +1,5 @@
 const db = require('../database/db');
+const fs = require('fs');
 
 class VisitController {
     // Ambil daftar apotek
@@ -19,10 +20,22 @@ class VisitController {
             const salesId = req.user.id;
             const { pharmacy_id, latitude, longitude, activity, keterangan } = req.body;
 
-            // 1. Tangkap file foto jika dikirim lewat multipart/form-data (Multer)
+            // 1. Tangkap file foto dan konversi ke Base64 agar aman di Vercel (Serverless)
             let fotoPath = null;
             if (req.file) {
-                fotoPath = `/uploads/${req.file.filename}`;
+                try {
+                    if (req.file.path && fs.existsSync(req.file.path)) {
+                        const fileBuffer = fs.readFileSync(req.file.path);
+                        const mimeType = req.file.mimetype || 'image/jpeg';
+                        fotoPath = `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
+                        fs.unlinkSync(req.file.path);
+                    } else if (req.file.buffer) {
+                        const mimeType = req.file.mimetype || 'image/jpeg';
+                        fotoPath = `data:${mimeType};base64,${req.file.buffer.toString('base64')}`;
+                    }
+                } catch (err) {
+                    console.error("Gagal memproses konversi foto:", err);
+                }
             } else if (req.body.foto) {
                 fotoPath = req.body.foto;
             }
