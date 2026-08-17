@@ -20,24 +20,31 @@ class VisitController {
             const salesId = req.user.id;
             const { pharmacy_id, latitude, longitude, activity, keterangan } = req.body;
 
-            // 1. Tangkap file foto dan konversi ke Base64 agar aman di Vercel (Serverless)
+            // 1. Tangkap file foto secara fleksibel (mendukung berbagai nama field & format base64)
             let fotoPath = null;
-            if (req.file) {
+            const uploadedFile = req.file || 
+                                 (req.files ? (req.files.foto || req.files.image || req.files.file || req.files[0]) : null);
+
+            if (uploadedFile) {
                 try {
-                    if (req.file.path && fs.existsSync(req.file.path)) {
-                        const fileBuffer = fs.readFileSync(req.file.path);
-                        const mimeType = req.file.mimetype || 'image/jpeg';
+                    if (uploadedFile.path && fs.existsSync(uploadedFile.path)) {
+                        const fileBuffer = fs.readFileSync(uploadedFile.path);
+                        const mimeType = uploadedFile.mimetype || 'image/jpeg';
                         fotoPath = `data:${mimeType};base64,${fileBuffer.toString('base64')}`;
-                        fs.unlinkSync(req.file.path);
-                    } else if (req.file.buffer) {
-                        const mimeType = req.file.mimetype || 'image/jpeg';
-                        fotoPath = `data:${mimeType};base64,${req.file.buffer.toString('base64')}`;
+                        fs.unlinkSync(uploadedFile.path);
+                    } else if (uploadedFile.buffer) {
+                        const mimeType = uploadedFile.mimetype || 'image/jpeg';
+                        fotoPath = `data:${mimeType};base64,${uploadedFile.buffer.toString('base64')}`;
                     }
                 } catch (err) {
                     console.error("Gagal memproses konversi foto:", err);
                 }
             } else if (req.body.foto) {
                 fotoPath = req.body.foto;
+            } else if (req.body.image) {
+                fotoPath = req.body.image;
+            } else if (req.body.bukti_foto) {
+                fotoPath = req.body.bukti_foto;
             }
 
             // 2. Ambil koordinat apotek untuk validasi radius (misal: maks 150 meter)
