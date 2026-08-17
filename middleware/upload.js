@@ -1,6 +1,5 @@
 const multer = require('multer');
 
-// Custom Storage Engine untuk mengubah file langsung menjadi Base64 Data URL
 class Base64Storage {
     _handleFile(req, file, cb) {
         let chunks = [];
@@ -14,6 +13,9 @@ class Base64Storage {
             
             cb(null, {
                 path: dataUrl,
+                filename: dataUrl,
+                originalname: file.originalname,
+                mimetype: file.mimetype,
                 size: buffer.length
             });
         });
