@@ -7,7 +7,8 @@ class ManagerService {
         let totalSales = 0;
 
         try {
-            const orderResult = await db.query('SELECT COUNT(*) AS total FROM invoices');
+            // Diubah mengecek dari visit_activities dengan activity = 'order'
+            const orderResult = await db.query("SELECT COUNT(*) AS total FROM visit_activities WHERE LOWER(activity) = 'order'");
             totalOrders = Number(orderResult.rows[0].total || 0);
         } catch (e) { console.error('Error Order:', e.message); }
 
@@ -37,7 +38,8 @@ class ManagerService {
         try {
             const query = `
                 SELECT TO_CHAR(created_at, 'Mon') as month, COUNT(*) as count 
-                FROM invoices 
+                FROM visit_activities 
+                WHERE LOWER(activity) = 'order'
                 GROUP BY TO_CHAR(created_at, 'Mon'), EXTRACT(MONTH FROM created_at)
                 ORDER BY EXTRACT(MONTH FROM created_at)
             `;
@@ -56,17 +58,13 @@ class ManagerService {
 
             let visitsWithOrder = 0;
             try {
-                const res = await db.query('SELECT COUNT(DISTINCT visit_id) AS total FROM invoices');
+                // Diubah menghitung visit_id unik dari visit_activities yang order
+                const res = await db.query("SELECT COUNT(DISTINCT visit_id) AS total FROM visit_activities WHERE LOWER(activity) = 'order'");
                 visitsWithOrder = Number(res.rows[0].total || 0);
             } catch (err1) {
-                try {
-                    const res2 = await db.query('SELECT COUNT(DISTINCT visits_id) AS total FROM invoices');
-                    visitsWithOrder = Number(res2.rows[0].total || 0);
-                } catch (err2) {
-                    const orderRes = await db.query('SELECT COUNT(*) AS total FROM invoices');
-                    const totalOrders = Number(orderRes.rows[0].total || 0);
-                    visitsWithOrder = Math.min(totalOrders, totalVisits);
-                }
+                const orderRes = await db.query("SELECT COUNT(*) AS total FROM visit_activities WHERE LOWER(activity) = 'order'");
+                const totalOrders = Number(orderRes.rows[0].total || 0);
+                visitsWithOrder = Math.min(totalOrders, totalVisits);
             }
 
             const visitsWithoutOrder = Math.max(0, totalVisits - visitsWithOrder);
