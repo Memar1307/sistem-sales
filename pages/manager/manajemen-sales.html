@@ -134,7 +134,7 @@
                 let hour = parseInt(match[1], 10);
                 let minute = parseInt(match[2], 10);
                 
-                hour = (hour + 14) % 24;
+                hour = (hour + 7) % 24;
                 
                 return String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
             }
