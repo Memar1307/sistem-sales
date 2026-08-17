@@ -20,7 +20,12 @@ class VisitController {
             const salesId = req.user.id;
             const { pharmacy_id, latitude, longitude, activity, keterangan } = req.body;
 
-            // Tangkap foto secara aman & bersihkan dari error prefix /uploads/
+            // --- DEBUG LOGS (Cek terminal server Anda untuk melihat isi kiriman dari sales) ---
+            console.log("=== DEBUG CHECK-IN FOTO ===");
+            console.log("req.file:", req.file);
+            console.log("req.files:", req.files);
+            console.log("req.body keys:", Object.keys(req.body));
+
             let fotoPath = null;
             
             const uploadedFile = req.file || 
@@ -43,21 +48,22 @@ class VisitController {
                 }
             } 
             
-            // Tangkap dari body request dan bersihkan jika ada /uploads/ yang menempel pada base64
             if (!fotoPath) {
-                let rawFoto = req.body.foto || req.body.image || req.body.bukti_foto || req.body.file || null;
-                if (rawFoto) {
-                    if (typeof rawFoto === 'string' && rawFoto.startsWith('/uploads/data:')) {
-                        fotoPath = rawFoto.replace('/uploads/', '');
-                    } else if (rawFoto === '/uploads/undefined' || rawFoto === 'undefined') {
-                        fotoPath = null;
-                    } else {
-                        fotoPath = rawFoto;
+                let rawFoto = req.body.foto || req.body.image || req.body.bukti_foto || req.body.file || req.body.photo || null;
+                if (rawFoto && rawFoto !== 'undefined' && rawFoto !== 'null') {
+                    if (typeof rawFoto === 'string') {
+                        if (rawFoto.startsWith('/uploads/')) {
+                            fotoPath = rawFoto.replace('/uploads/', '');
+                        } else {
+                            fotoPath = rawFoto;
+                        }
                     }
                 }
             }
 
-            // Validasi koordinat apotek & radius (maks 150 meter)
+            console.log("Status Foto yang akan disimpan ke DB:", fotoPath ? "TERISI (Base64)" : "NULL (Kosong dari Sales)");
+
+            // Ambil koordinat apotek untuk validasi radius (misal: maks 150 meter)
             const pharmRes = await client.query('SELECT latitude, longitude, nama_apotek FROM pharmacies WHERE id = $1', [pharmacy_id]);
             if (pharmRes.rows.length === 0) {
                 await client.query('ROLLBACK');
@@ -76,7 +82,7 @@ class VisitController {
                 });
             }
 
-            // Simpan data kunjungan ke tabel visits
+            // Simpan data kunjungan ke tabel visits (termasuk kolom foto)
             const currentTime = new Date().toTimeString().split(' ')[0];
             const visitInsert = `
                 INSERT INTO visits (sales_id, pharmacy_id, tanggal, jam_checkin, latitude, longitude, catatan, foto)
@@ -86,7 +92,7 @@ class VisitController {
             const visitRes = await client.query(visitInsert, [salesId, pharmacy_id, currentTime, latitude, longitude, keterangan || '', fotoPath]);
             const visitId = visitRes.rows[0].id;
 
-            // Simpan aktivitas kunjungan
+            // Simpan aktivitas kunjungan (order / tidak_order / inkaso)
             const activityInsert = `
                 INSERT INTO visit_activities (visit_id, activity, keterangan)
                 VALUES ($1, $2, $3);
