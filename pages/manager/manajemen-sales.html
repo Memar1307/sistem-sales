@@ -85,6 +85,14 @@
         </div>
     </div>
 
+    <!-- Modal Preview Gambar (Zoom Foto Bukti) -->
+    <div id="imageModal" class="modal" onclick="closeImageModal()" style="z-index: 2000;">
+        <div style="position: relative; max-width: 90%; max-height: 90vh; display: flex; align-items: center; justify-content: center;" onclick="event.stopPropagation()">
+            <button onclick="closeImageModal()" style="position: absolute; top: -40px; right: 0; background: white; border: none; font-size: 24px; cursor: pointer; color: #333; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">&times;</button>
+            <img id="previewImage" src="" alt="Preview Bukti Foto" style="max-width: 100%; max-height: 85vh; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); background: #fff;">
+        </div>
+    </div>
+
     <sidebar>
         <div class="sidebar-top">
             <h2><i class="fa-solid fa-pills"></i> TFU Sales</h2>
@@ -124,7 +132,7 @@
     <script>
         const token = localStorage.getItem('token');
 
-        // Fungsi untuk menambahkan +14 jam secara langsung pada string waktu database agar sesuai WIB
+        // Fungsi untuk menambahkan +7 jam (atau sesuai konfigurasi waktu Anda) secara langsung pada string waktu database agar sesuai WIB
         function formatWIB(rawDateStr) {
             if (!rawDateStr) return '-';
             let str = String(rawDateStr).trim();
@@ -207,7 +215,7 @@
             }
             let html = '';
             visitArray.forEach(v => {
-                const photoUrl = v.visit_foto || v.activity_foto || v.visit_photo || v.activity_photo || v.foto || v.photo || v.image || v.bukti_foto;
+                const photoUrl = v.visit_foto || v.activity_foto || v.visit_photo || v.activity_foto || v.foto || v.photo || v.image || v.bukti_foto;
                 const rawActivity = v.activity ? v.activity.toLowerCase() : 'kunjungan';
                 let badgeClass = 'badge';
                 let activityLabel = rawActivity.toUpperCase();
@@ -237,7 +245,7 @@
                     html += `
                         <div style="flex-shrink: 0; text-align: center;">
                             <div style="font-size: 11px; font-weight: 600; margin-bottom: 5px; color: var(--text-muted);">Bukti Foto:</div>
-                            <img src="${photoUrl}" alt="Bukti" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer;" onclick="window.open('${photoUrl}', '_blank')">
+                            <img src="${photoUrl}" alt="Bukti" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer;" onclick="openImageModal('${photoUrl}')" title="Klik untuk memperbesar">
                         </div>
                     `;
                 }
@@ -295,6 +303,16 @@
 
         function closeModal() {
             document.getElementById('detailModal').style.display = 'none';
+        }
+
+        // Fungsi Baru untuk Modal Zoom Gambar (Aman & Tidak Blank)
+        function openImageModal(url) {
+            document.getElementById('previewImage').src = url;
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').style.display = 'none';
         }
 
         function logout() { 
